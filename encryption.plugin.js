@@ -1,5 +1,8 @@
 //META{"name":"DiscordEncryption","website":"https://github.com/EnKrypt/DiscordEncryption","source":"https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/encryption.plugin.js"}*//
 
+const crypto = require('crypto');
+const { promisify } = require('util');
+
 class DiscordEncryption {
     constructor() {
         this.buttonElement = undefined;
@@ -10,6 +13,9 @@ class DiscordEncryption {
         };
 
         this.configKey = `${this.getName()}Config`;
+        this.messageSelector =
+            '.da-message .da-content .da-container .da-markup:not(.da-embedContentInner)';
+        this.encryptionHeader = '-----BEGIN ENCRYPTED MESSAGE-----';
     }
 
     getName() {
@@ -164,6 +170,19 @@ class DiscordEncryption {
         if (changes.target.querySelector('.da-channelTextArea')) {
             this.refreshButton();
         }
+        // Perform decryption when a message comes in
+        if (
+            this.config.active &&
+            changes.addedNodes.length &&
+            changes.addedNodes[0].nodeType == Node.ELEMENT_NODE &&
+            changes.addedNodes[0].querySelectorAll(this.messageSelector).length
+        ) {
+            for (var node of changes.addedNodes[0].querySelectorAll(
+                this.messageSelector
+            )) {
+                node.innerHTML = this.decryptMessage(node.innerHTML);
+            }
+        }
     }
 
     // Unload and load encryption button and handlers
@@ -172,9 +191,9 @@ class DiscordEncryption {
         $('.key-fields').remove();
 
         var eye =
-        'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z';
+            'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z';
         var noeye =
-        'M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z';
+            'M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z';
 
         var keyFields = '';
         if (this.config.secrets && this.config.secrets.length) {
@@ -243,8 +262,16 @@ class DiscordEncryption {
                         );
                     }
                 });
-                if (secrets.length == 1 && (!this.config.secrets || !this.config.secrets.length) && !this.config.active) {
+                if (
+                    secrets.length == 1 &&
+                    (!this.config.secrets || !this.config.secrets.length) &&
+                    !this.config.active
+                ) {
                     this.config.active = true;
+                    // Decrypt existing messages
+                    $(this.messageSelector).each(function(index) {
+                        $(this).html = this.decryptMessage($(this).html);
+                    });
                 }
                 this.config.secrets = secrets.reverse();
                 this.updateConfig();
@@ -256,14 +283,21 @@ class DiscordEncryption {
         });
 
         $('.key-fields svg').click(function(e) {
-            console.log('HURR', e);
-            if ($(this).prev().attr('type') == 'password') {
-                $(this).prev().attr('type', 'text');
+            if (
+                $(this)
+                    .prev()
+                    .attr('type') == 'password'
+            ) {
+                $(this)
+                    .prev()
+                    .attr('type', 'text');
                 $(this)
                     .children()
                     .attr('d', noeye);
             } else {
-                $(this).prev().attr('type', 'password');
+                $(this)
+                    .prev()
+                    .attr('type', 'password');
                 $(this)
                     .children()
                     .attr('d', eye);
@@ -290,5 +324,48 @@ class DiscordEncryption {
     // Update the current config state to localStorage
     updateConfig() {
         localStorage.setItem(this.configKey, JSON.stringify(this.config));
+    }
+
+    decryptMessage(text) {
+        if (
+            text.startsWith(this.encryptionHeader) &&
+            this.config.secrets &&
+            this.config.secrets.length
+        ) {
+            return this.decrypt(
+                this.pwtokey(this.config.secrets[0]),
+                this.text.replace(this.encryptionHeader, '').trim()
+            );
+        } else {
+            return text;
+        }
+    }
+
+    /*
+        Thanks to mwgamera for helping me with the actual encryption and decryption bit
+        You can read his implementation here :
+        https://gist.github.com/mwgamera/5bad53a3c3721b8909bfe6bee2f83f0f
+    */
+
+    pwtokey(pass, salt = '', iter = 100) {
+        return promisify(crypto.pbkdf2)(pass, salt, iter, 16, 'sha256');
+    }
+
+    async encrypt(key, msg) {
+        var iv = await promisify(crypto.randomBytes)(16);
+        var ctx = crypto.createCipheriv('aes-128-gcm', key, iv);
+        return Buffer.concat([
+            iv,
+            ctx.update(msg, 'utf8'),
+            ctx.final(),
+            ctx.getAuthTag()
+        ]).toString('base64');
+    }
+
+    decrypt(key, msg) {
+        var buf = Buffer.from(msg, 'base64');
+        var ctx = crypto.createDecipheriv('aes-128-gcm', key, buf.slice(0, 16));
+        ctx.setAuthTag(buf.slice(-16));
+        return ctx.update(buf.slice(16, -16), null, 'utf8') + ctx.final('utf8');
     }
 }
