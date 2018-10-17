@@ -115,6 +115,10 @@ class DiscordEncryption {
                 margin-bottom: 0.25em;
             }
 
+            .key-fields :nth-last-child(2) {
+                background: rgba(0,150,0,0.25);
+            }
+
             .key-fields svg {
                 margin-left: -2em;
                 margin-bottom: -0.4em;
@@ -239,10 +243,10 @@ class DiscordEncryption {
                         );
                     }
                 });
-                this.config.secrets = secrets.reverse();
-                if (this.config.secrets.length == 1 && !this.config.active) {
+                if (secrets.length == 1 && (!this.config.secrets || !this.config.secrets.length) && !this.config.active) {
                     this.config.active = true;
                 }
+                this.config.secrets = secrets.reverse();
                 this.updateConfig();
                 this.hideKeyFields();
                 BdApi.showToast(`Secret key(s) were updated successfully`, {
