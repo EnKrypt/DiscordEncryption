@@ -8,7 +8,8 @@ Configurable end to end encryption for Discord.
 
 This project was originally inspired by [Hmeritt's discord-encryption](https://github.com/Hmerritt/discord-encryption)
 
-**DO NOT actually use the above project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality, pointing to ill intent or (hopefully) just negligence on the author's part.**
+**DO NOT actually use the above linked project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality, pointing to ill intention or (hopefully) just negligence on the author's part.**
+**Although this current project also has some unpleasant characteristics (single file, JQuery hacks for UI), it follows good practices to the best of its ability, and I encourage users to review the source code before using it**
 
 ## Installation
 * You will need [Bandaged BetterDiscord](https://rauenzi.github.io/BetterDiscordApp/), which will exist alongside your existing Discord installation. Install this first if you don't have it.

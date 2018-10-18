@@ -1,12 +1,11 @@
 //META{"name":"DiscordEncryption","website":"https://github.com/EnKrypt/DiscordEncryption","source":"https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/encryption.plugin.js"}*//
 
-const crypto = require('crypto');
-const { promisify } = require('util');
-
 class DiscordEncryption {
     constructor() {
+        this.crypto = require('crypto');
         this.buttonElement = undefined;
         this.timeoutId = undefined;
+        this.messageSent = false;
         this.config = {
             active: false,
             secrets: []
@@ -14,7 +13,8 @@ class DiscordEncryption {
 
         this.configKey = `${this.getName()}Config`;
         this.messageSelector =
-            '.da-message .da-content .da-container .da-markup:not(.da-embedContentInner)';
+        '.da-message .da-content .da-container .da-markup:not(.da-embedContentInner)';
+        this.textareaSelector = '.da-chat .da-content form textarea';
         this.encryptionHeader = '-----BEGIN ENCRYPTED MESSAGE-----';
     }
 
@@ -52,6 +52,7 @@ class DiscordEncryption {
                 );
             }
         }
+
         // Inject CSS
         BdApi.injectCSS(
             'buttonStyle',
@@ -159,11 +160,33 @@ class DiscordEncryption {
             }
             `
         );
+        BdApi.injectCSS(
+            'modalStyle',
+            `
+            .bd-modal code {
+                display: block;
+                padding: 1em;
+                background: rgba(0,0,0,0.2);
+                border-radius: 0.5em;
+            }
+            `
+        );
+
         // Add overlay element
         $('.app').after(`<div class="overlay-wrapper hide"></div>`);
         $('.overlay-wrapper')[0].addEventListener('click', e => {
             this.hideKeyFields();
         });
+
+        // Get user token (careful with this bit)
+        var DiscordLocalStorageProxy = document.createElement('iframe');
+        DiscordLocalStorageProxy.style.display = 'none';
+        DiscordLocalStorageProxy.id = 'DiscordLocalStorageProxy';
+        document.body.appendChild(DiscordLocalStorageProxy);
+        var token = DiscordLocalStorageProxy.contentWindow.localStorage
+            .getItem('token')
+            .replace(/"/g, '');
+        bdStorage.set('token', token);
     }
 
     observer(changes) {
@@ -172,7 +195,6 @@ class DiscordEncryption {
         }
         // Perform decryption when a message comes in
         if (
-            this.config.active &&
             changes.addedNodes.length &&
             changes.addedNodes[0].nodeType == Node.ELEMENT_NODE &&
             changes.addedNodes[0].querySelectorAll(this.messageSelector).length
@@ -181,6 +203,11 @@ class DiscordEncryption {
                 this.messageSelector
             )) {
                 node.innerHTML = this.decryptMessage(node.innerHTML);
+            }
+            // Scroll to bottom if own message
+            if (this.messageSent) {
+                $('.da-messages.da-scroller')[0].scrollTop = $('.da-messages.da-scroller')[0].scrollHeight;
+                this.messageSent = false;
             }
         }
     }
@@ -273,6 +300,9 @@ class DiscordEncryption {
                         $(this).html = this.decryptMessage($(this).html);
                     });
                 }
+                if (secrets.length == 0 && this.config.active) {
+                    this.config.active = false;
+                }
                 this.config.secrets = secrets.reverse();
                 this.updateConfig();
                 this.hideKeyFields();
@@ -303,6 +333,37 @@ class DiscordEncryption {
                     .attr('d', eye);
             }
         });
+
+        // Intercept message sending with custom function
+        var onSubmitMessage = e => {
+            if (
+                e.which == 13 &&
+                this.config.active &&
+                $('.encryptionButton').length &&
+                $(this.textareaSelector)
+                    .val()
+                    .trim()
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.sendMessage(
+                    this.encryptMessage(
+                        $(this.textareaSelector)
+                            .val()
+                            .trim()
+                    )
+                );
+                this.clearTextArea();
+            }
+        };
+        $(this.textareaSelector)[0].removeEventListener(
+            'keydown',
+            onSubmitMessage
+        );
+        $(this.textareaSelector)[0].addEventListener(
+            'keydown',
+            onSubmitMessage
+        );
     }
 
     showKeyFields() {
@@ -332,13 +393,72 @@ class DiscordEncryption {
             this.config.secrets &&
             this.config.secrets.length
         ) {
-            return this.decrypt(
-                this.pwtokey(this.config.secrets[0]),
-                this.text.replace(this.encryptionHeader, '').trim()
-            );
+            var result = `Could not be decrypted`;
+            for (var secret of this.config.secrets) {
+                try {
+                    result = this.decrypt(
+                        this.pwtokey(secret),
+                        text.replace(this.encryptionHeader, '').trim()
+                    );
+                } catch (error) {} // No need to do anything. We know the key did not work.
+            }
+            return result;
         } else {
             return text;
         }
+    }
+
+    encryptMessage(text) {
+        if (
+            this.config.active &&
+            this.config.secrets &&
+            this.config.secrets.length
+        ) {
+            return `${this.encryptionHeader}\n${this.encrypt(
+                this.pwtokey(this.config.secrets[0]),
+                text
+            )}`;
+        } else {
+            return text;
+        }
+    }
+
+    // Programmatically send a discord message
+    sendMessage(message) {
+        $.ajax({
+            type: 'POST',
+            url: `https://discordapp.com/api/channels/${window.location.pathname
+                .split('/')
+                .pop()}/messages`,
+            headers: {
+                Authorization:
+                    localStorage.getItem('token') || bdStorage.get('token')
+            },
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify({ content: message }),
+            error: (req, error, exception) => {
+                this.messageSent = false;
+                BdApi.alert(
+                    'Could not send message',
+                    `<pre>${message}</pre><br />This message was not sent.<br /><br /><code>${
+                        req.responseText
+                    }</code>`
+                );
+            }
+        });
+        this.messageSent = true;
+    }
+
+    clearTextArea() {
+        var element = $(this.textareaSelector)[0];
+        var cursor = element[Object.keys(element).find(key => key.startsWith("__reactInternalInstance"))]
+        while (!(cursor.stateNode && cursor.stateNode.constructor && cursor.stateNode.constructor.displayName == 'ChannelTextAreaForm')) {
+            cursor = cursor.return;
+        }
+        cursor.stateNode.setState({
+            textValue: ''
+        });
     }
 
     /*
@@ -348,12 +468,12 @@ class DiscordEncryption {
     */
 
     pwtokey(pass, salt = '', iter = 100) {
-        return promisify(crypto.pbkdf2)(pass, salt, iter, 16, 'sha256');
+        return this.crypto.pbkdf2Sync(pass, salt, iter, 16, 'sha256');
     }
 
-    async encrypt(key, msg) {
-        var iv = await promisify(crypto.randomBytes)(16);
-        var ctx = crypto.createCipheriv('aes-128-gcm', key, iv);
+    encrypt(key, msg) {
+        var iv = this.crypto.randomBytes(16);
+        var ctx = this.crypto.createCipheriv('aes-128-gcm', key, iv);
         return Buffer.concat([
             iv,
             ctx.update(msg, 'utf8'),
@@ -364,7 +484,11 @@ class DiscordEncryption {
 
     decrypt(key, msg) {
         var buf = Buffer.from(msg, 'base64');
-        var ctx = crypto.createDecipheriv('aes-128-gcm', key, buf.slice(0, 16));
+        var ctx = this.crypto.createDecipheriv(
+            'aes-128-gcm',
+            key,
+            buf.slice(0, 16)
+        );
         ctx.setAuthTag(buf.slice(-16));
         return ctx.update(buf.slice(16, -16), null, 'utf8') + ctx.final('utf8');
     }
