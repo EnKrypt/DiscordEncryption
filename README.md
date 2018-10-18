@@ -6,12 +6,6 @@ Configurable end to end encryption for Discord.
 
 ---
 
-This project was originally inspired by [Hmeritt's discord-encryption](https://github.com/Hmerritt/discord-encryption)
-
-**DO NOT actually use the above linked project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality, pointing to ill intention or (hopefully) just negligence on the author's part.**
-
-**Although this current project also has some issues with ease of readability, it follows good practices, and I encourage users to review the source code before using it.**
-
 ## Installation
 * You will need [Bandaged BetterDiscord](https://rauenzi.github.io/BetterDiscordApp/), which will exist alongside your existing Discord installation. Install this first if you don't have it.
 * Take the [`encryption.plugin.js`](https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/encryption.plugin.js) file from this repository, and put it in your plugins folder. You can find where your plugins folder is from `Discord User Settings -> Plugins -> Open Plugin Folder`
@@ -49,6 +43,14 @@ This project was originally inspired by [Hmeritt's discord-encryption](https://g
 ## TODO
 * Support for light theme (Pull Requests are welcome)
 * Per channel configurations
+
+---
+
+This project was originally inspired by [Hmeritt's discord-encryption](https://github.com/Hmerritt/discord-encryption)
+
+**DO NOT actually use the above linked project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality, pointing to ill intention or (hopefully) just negligence on the author's part.**
+
+**Although this current project also has some issues with ease of readability, it follows good practices, and I encourage users to review the source code before using it.**
 
 ### There is no support for mobile as of yet
 This is a sad consequence of Discord :
