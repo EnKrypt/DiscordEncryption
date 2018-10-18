@@ -34,7 +34,7 @@ class DiscordEncryption {
         this.messageSelector =
             '.da-message .da-content .da-container .da-markup:not(.da-embedContentInner)';
         this.textareaSelector = '.da-chat .da-content form textarea';
-        this.encryptionHeader = '-----BEGIN ENCRYPTED MESSAGE-----';
+        this.encryptionHeader = '-----ENCRYPTED MESSAGE-----';
     }
 
     getName() {
@@ -194,10 +194,16 @@ class DiscordEncryption {
                 color: #1C9C6D;
                 cursor: pointer;
             }
+            .encryption-icon.error {
+                color: #9C3C3C;
+            }
             .show-secret-button {
                 cursor: pointer;
                 color: #92a9fa;
                 font-weight: 600;
+            }
+            .red-text {
+                color: #ac5c5c;
             }
             `
         );
@@ -448,7 +454,15 @@ class DiscordEncryption {
             this.config.secrets &&
             this.config.secrets.length
         ) {
-            var result = `Could not be decrypted`;
+            var result = `<span class="encryption-icon error">&#9888;</span>&nbsp;&nbsp;&nbsp;<div class="encryption-info">
+                This message could not be decrypted properly<br /><br />
+                This can happen for one or more of the following reasons:<br />
+                1. You do not have the secret that was used to encrypt this message<br />
+                2. The sender included the encrypted message header on a non-encrypted plaintext message<br />
+                3. The message was encrypted wrongly or the encrypted data is corrupted<br /><br /><br />
+                Raw Message:<br /><br />
+                <code>${text}</code>
+            </div><span class="red-text">Could not decrypt message</span>`;
             for (var secret of this.config.secrets) {
                 try {
                     result = `<span class="encryption-icon">&#128274;</span>&nbsp;&nbsp;&nbsp;<div class="encryption-info">

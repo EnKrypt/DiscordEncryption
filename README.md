@@ -9,7 +9,8 @@ Configurable end to end encryption for Discord.
 This project was originally inspired by [Hmeritt's discord-encryption](https://github.com/Hmerritt/discord-encryption)
 
 **DO NOT actually use the above linked project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality, pointing to ill intention or (hopefully) just negligence on the author's part.**
-**Although this current project also has some unpleasant characteristics (single file, JQuery hacks for UI), it follows good practices to the best of its ability, and I encourage users to review the source code before using it**
+
+**Although this current project also has some unpleasant characteristics (single file, JQuery hacks for UI), it follows good practices to the best of its ability, and I encourage users to review the source code before using it.**
 
 ## Installation
 * You will need [Bandaged BetterDiscord](https://rauenzi.github.io/BetterDiscordApp/), which will exist alongside your existing Discord installation. Install this first if you don't have it.
@@ -18,9 +19,32 @@ This project was originally inspired by [Hmeritt's discord-encryption](https://g
 
 ## Usage
 * Left click on the padlock icon next to the message textbox to toggle encryption on or off for your outgoing messages.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/images/lock-icon-on.png">
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/images/lock-icon-off.png">
+</p>
+
 * Right click the padlock icon to configure your secret keys. All messages will be automatically decrypted as long as you have the right key.
-* The first key you on enter at the bottom is your primary secret key (shown in green). This will be used to encrypt your outgoing messages when encryption is on.
-* You can click on the info icon next to decrypted messages to see more information about the raw message and decryption process.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/images/auto-decrypt.png">
+</p>
+
+* The first key you enter at the bottom is your primary secret key (shown in green). This will be used to encrypt your outgoing messages when encryption is on.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/images/secrets-config.png">
+</p>
+
+* You can click on the icon next to successfully or failed decrypted messages to see more information.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/images/message-info.png">
+</p>
 
 ## TODO
 * Support for light theme (Pull Requests are welcome)
