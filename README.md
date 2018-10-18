@@ -17,11 +17,14 @@ This project was originally inspired by [Hmeritt's discord-encryption](https://g
 * Restart Discord.
 
 ## Usage
-
 * Left click on the padlock icon next to the message textbox to toggle encryption on or off for your outgoing messages.
 * Right click the padlock icon to configure your secret keys. All messages will be automatically decrypted as long as you have the right key.
 * The first key you on enter at the bottom is your primary secret key (shown in green). This will be used to encrypt your outgoing messages when encryption is on.
 * You can click on the info icon next to decrypted messages to see more information about the raw message and decryption process.
+
+## TODO
+* Support for light theme (Pull Requests are welcome)
+* Per channel configurations
 
 ### There is no support for mobile as of yet
 This is a sad consequence of Discord :

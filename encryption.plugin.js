@@ -1,5 +1,24 @@
 //META{"name":"DiscordEncryption","website":"https://github.com/EnKrypt/DiscordEncryption","source":"https://raw.githubusercontent.com/EnKrypt/DiscordEncryption/master/encryption.plugin.js"}*//
 
+/*
+    I am aware that the code here is not neat.
+    The documentation for BetterDiscord, BandagedBD, and Discord UI
+    is tremendously lacking, or broken and incomplete where present.
+    Single file limitations, needing to modify React internal state
+    without access to React Components, having access to JQuery only,
+    has resulted in a combination of UI hacks and large inline code.
+
+    However, things have been separated as nicely as possible,
+    nothing malignant is present (even tokens are handled securely),
+    and while not much can be said for the readability of this code,
+    I want to encourage you to go through it anyway and verify
+    that nothing wrong is being done, because if plugin authors
+    wanted to, they could do a LOT of harm with what is available.
+
+    TODO: Support for light theme
+    TODO: Per channel config
+*/
+
 class DiscordEncryption {
     constructor() {
         this.crypto = require('crypto');
@@ -13,7 +32,7 @@ class DiscordEncryption {
 
         this.configKey = `${this.getName()}Config`;
         this.messageSelector =
-        '.da-message .da-content .da-container .da-markup:not(.da-embedContentInner)';
+            '.da-message .da-content .da-container .da-markup:not(.da-embedContentInner)';
         this.textareaSelector = '.da-chat .da-content form textarea';
         this.encryptionHeader = '-----BEGIN ENCRYPTED MESSAGE-----';
     }
@@ -25,22 +44,22 @@ class DiscordEncryption {
         return 'Configurable end to end encryption for Discord';
     }
     getVersion() {
-        return '0.0.1';
+        return '0.0.3';
     }
     getAuthor() {
         return 'EnKrypt';
     }
 
     start() {
-        BdApi.showToast(`${this.getName()} Started`, { type: 'success' });
+        // BdApi.showToast(`${this.getName()} Started`, { type: 'success' });
     }
 
     stop() {
-        BdApi.showToast(`${this.getName()} Stopped`, { type: 'warn' });
+        // BdApi.showToast(`${this.getName()} Stopped`, { type: 'warn' });
     }
 
     load() {
-        BdApi.showToast(`${this.getName()} Loaded`, { type: 'info' });
+        // BdApi.showToast(`${this.getName()} Loaded`, { type: 'info' });
         // Load config
         if (localStorage.getItem(this.configKey)) {
             try {
@@ -65,23 +84,18 @@ class DiscordEncryption {
                 -webkit-transition: all 280ms ease;
                 transition: all 280ms ease;
             }
-
             .encryptionButton:hover path {
                 fill: #fff;
             }
-
             .encryptionButton.enabled path {
                 fill: #43b581;
             }
-
             .encryptionButton.disabled path {
                 fill: #888;
             }
-
             .encryptionButton.enabled:hover path {
                 fill: #1C9C6D;
             }
-
             .encryptionButton.disabled:hover path {
                 fill: #fff;
             }
@@ -92,6 +106,8 @@ class DiscordEncryption {
             `
             .key-fields {
                 background: #246;
+                opacity: 1;
+                visibility: visible;
                 border-radius: 0.3em;
                 position: absolute;
                 width: 15em;
@@ -102,12 +118,11 @@ class DiscordEncryption {
                 transition: 0.3s ease;
                 z-index: 101;
             }
-
             .key-fields.hide {
-                bottom: -18em;
+                opacity: 0;
+                visibility: hidden;
                 transition: 0.3s ease;
             }
-
             .key-fields input {
                 background: rgba(0,0,0,0.25);
                 border-radius: 0.3em;
@@ -121,17 +136,14 @@ class DiscordEncryption {
                 line-height: 1.5;
                 margin-bottom: 0.25em;
             }
-
             .key-fields :nth-last-child(2) {
                 background: rgba(0,150,0,0.25);
             }
-
             .key-fields svg {
                 margin-left: -2em;
                 margin-bottom: -0.4em;
                 cursor: pointer;
             }
-
             .key-fields-label {
                 color: #eee;
                 text-align: center;
@@ -152,7 +164,6 @@ class DiscordEncryption {
                 z-index: 100;
                 transition: 0.3s ease;
             }
-
             .overlay-wrapper.hide {
                 opacity: 0;
                 visibility: hidden;
@@ -168,6 +179,25 @@ class DiscordEncryption {
                 padding: 1em;
                 background: rgba(0,0,0,0.2);
                 border-radius: 0.5em;
+                overflow-wrap: break-word;
+            }
+            `
+        );
+        BdApi.injectCSS(
+            'infoStyle',
+            `
+            .encryption-info {
+                display: none;
+            }
+            .encryption-icon {
+                font-size: 1.2em;
+                color: #1C9C6D;
+                cursor: pointer;
+            }
+            .show-secret-button {
+                cursor: pointer;
+                color: #92a9fa;
+                font-weight: 600;
             }
             `
         );
@@ -176,6 +206,62 @@ class DiscordEncryption {
         $('.app').after(`<div class="overlay-wrapper hide"></div>`);
         $('.overlay-wrapper')[0].addEventListener('click', e => {
             this.hideKeyFields();
+        });
+
+        // Global handlers
+        $(document).on('keydown', this.textareaSelector, e => {
+            if (
+                e.which == 13 &&
+                this.config.active &&
+                $('.encryptionButton').length &&
+                $(this.textareaSelector)
+                    .val()
+                    .trim()
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.sendMessage(
+                    this.encryptMessage(
+                        $(this.textareaSelector)
+                            .val()
+                            .trim()
+                    )
+                );
+                this.clearTextArea();
+            }
+        });
+        $(document).on('click', '.encryption-icon', function() {
+            BdApi.alert(
+                'Message Information',
+                $(this)
+                    .siblings('.encryption-info')
+                    .html()
+            );
+        });
+        $(document).on('click', '.show-secret-button', function() {
+            if (
+                $(this)
+                    .html()
+                    .trim() == 'Show'
+            ) {
+                $(this).html('Hide');
+                $(this)
+                    .siblings('.show-secret-text')
+                    .html($(this).siblings('.show-secret-text')[0].id);
+            } else if (
+                $(this)
+                    .html()
+                    .trim() == 'Hide'
+            ) {
+                $(this).html('Show');
+                $(this)
+                    .siblings('.show-secret-text')
+                    .html(
+                        $(this)
+                            .siblings('.show-secret-text')[0]
+                            .id.replace(/./g, '*')
+                    );
+            }
         });
 
         // Get user token (careful with this bit)
@@ -206,7 +292,9 @@ class DiscordEncryption {
             }
             // Scroll to bottom if own message
             if (this.messageSent) {
-                $('.da-messages.da-scroller')[0].scrollTop = $('.da-messages.da-scroller')[0].scrollHeight;
+                $('.da-messages.da-scroller')[0].scrollTop = $(
+                    '.da-messages.da-scroller'
+                )[0].scrollHeight;
                 this.messageSent = false;
             }
         }
@@ -216,12 +304,10 @@ class DiscordEncryption {
     refreshButton() {
         $('.encryptionButton').remove();
         $('.key-fields').remove();
-
         var eye =
             'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z';
         var noeye =
             'M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z';
-
         var keyFields = '';
         if (this.config.secrets && this.config.secrets.length) {
             for (var secret of this.config.secrets) {
@@ -232,7 +318,6 @@ class DiscordEncryption {
                     </svg>` + keyFields;
             }
         }
-
         $('button.da-attachButton').after(
             `<svg id="encryptionButton" class="encryptionButton" style="width:24px;height:24px;padding-right:8px;" viewBox="0 0 24 24"><path fill d="M18,8H17V6A5,5 0 0,0 12,1A5,5 0 0,0 7,6V8H6A2,2 0 0,0 4,10V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V10A2,2 0 0,0 18,8M8.9,6C8.9,4.29 10.29,2.9 12,2.9C13.71,2.9 15.1,4.29 15.1,6V8H8.9V6M16,16H13V19H11V16H8V14H11V11H13V14H16V16Z" /></svg>
             <div class="key-fields hide">
@@ -244,7 +329,6 @@ class DiscordEncryption {
                 ${keyFields}
             </div>`
         );
-
         this.buttonElement = $('.encryptionButton')[0];
         if (this.config.active) {
             this.buttonElement.classList.add('enabled');
@@ -252,15 +336,16 @@ class DiscordEncryption {
             this.buttonElement.classList.add('disabled');
         }
 
+        // Handlers for button and key fields
         this.buttonElement.addEventListener('click', e => {
             if (this.config.secrets && this.config.secrets.length) {
                 this.config.active = !this.config.active;
+                this.updateConfig();
                 this.refreshButton();
             } else {
                 this.showKeyFields();
             }
         });
-
         this.buttonElement.addEventListener('contextmenu', e => {
             this.showKeyFields();
         });
@@ -311,7 +396,6 @@ class DiscordEncryption {
                 });
             }
         });
-
         $('.key-fields svg').click(function(e) {
             if (
                 $(this)
@@ -333,41 +417,9 @@ class DiscordEncryption {
                     .attr('d', eye);
             }
         });
-
-        // Intercept message sending with custom function
-        var onSubmitMessage = e => {
-            if (
-                e.which == 13 &&
-                this.config.active &&
-                $('.encryptionButton').length &&
-                $(this.textareaSelector)
-                    .val()
-                    .trim()
-            ) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.sendMessage(
-                    this.encryptMessage(
-                        $(this.textareaSelector)
-                            .val()
-                            .trim()
-                    )
-                );
-                this.clearTextArea();
-            }
-        };
-        $(this.textareaSelector)[0].removeEventListener(
-            'keydown',
-            onSubmitMessage
-        );
-        $(this.textareaSelector)[0].addEventListener(
-            'keydown',
-            onSubmitMessage
-        );
     }
 
     showKeyFields() {
-        this.refreshButton();
         $('.key-fields')[0].classList.remove('hide');
         $('.overlay-wrapper')[0].classList.remove('hide');
         // Focus on new key field
@@ -380,6 +432,9 @@ class DiscordEncryption {
         clearTimeout(this.timeoutId);
         $('.key-fields')[0].classList.add('hide');
         $('.overlay-wrapper')[0].classList.add('hide');
+        setTimeout(() => {
+            this.refreshButton();
+        }, 300);
     }
 
     // Update the current config state to localStorage
@@ -396,10 +451,19 @@ class DiscordEncryption {
             var result = `Could not be decrypted`;
             for (var secret of this.config.secrets) {
                 try {
-                    result = this.decrypt(
+                    result = `<span class="encryption-icon">&#128274;</span>&nbsp;&nbsp;&nbsp;<div class="encryption-info">
+                                This message was successfully decrypted with a secret that you possess.<br /><br />
+                                Cipher: AES-128-GCM<br /><br />
+                                Secret: <span class="show-secret-text" id="${secret}">${secret.replace(
+                        /./g,
+                        '*'
+                    )}</span> &nbsp; &nbsp; <span class="show-secret-button">Show</span><br /><br /><br />
+                        Raw Message:<br /><br />
+                        <code>${text}</code>
+                    </div>${this.decrypt(
                         this.pwtokey(secret),
                         text.replace(this.encryptionHeader, '').trim()
-                    );
+                    )}`;
                 } catch (error) {} // No need to do anything. We know the key did not work.
             }
             return result;
@@ -452,8 +516,20 @@ class DiscordEncryption {
 
     clearTextArea() {
         var element = $(this.textareaSelector)[0];
-        var cursor = element[Object.keys(element).find(key => key.startsWith("__reactInternalInstance"))]
-        while (!(cursor.stateNode && cursor.stateNode.constructor && cursor.stateNode.constructor.displayName == 'ChannelTextAreaForm')) {
+        var cursor =
+            element[
+                Object.keys(element).find(key =>
+                    key.startsWith('__reactInternalInstance')
+                )
+            ];
+        while (
+            !(
+                cursor.stateNode &&
+                cursor.stateNode.constructor &&
+                cursor.stateNode.constructor.displayName ==
+                    'ChannelTextAreaForm'
+            )
+        ) {
             cursor = cursor.return;
         }
         cursor.stateNode.setState({
