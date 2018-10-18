@@ -48,14 +48,14 @@ Configurable end to end encryption for Discord.
 
 This project was originally inspired by [Hmeritt's discord-encryption](https://github.com/Hmerritt/discord-encryption)
 
-**DO NOT actually use the above linked project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality, pointing to ill intention or (hopefully) just negligence on the author's part.**
+**DO NOT actually use the above linked project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality.**
 
 **Although this current project also has some issues with ease of readability, it follows good practices, and I encourage users to review the source code before using it.**
 
 ### There is no support for mobile as of yet
-This is a sad consequence of Discord :
-* not caring about end to end encryption (which should be a feature on any communication app)
+This is a consequence of Discord :
+* not caring about end to end encryption yet (which should be a feature on any communication app at this scale)
 * not caring about the community where people want to make mods, plugins and provide extra functionality and support
-* not caring about making their projects open source (which is a viable strategy for any business, contrary to popular uninformed opinion)
+* not caring about making their projects open source (which is a viable strategy for any business, contrary to popular opinion)
 
-Short of making Android and iOS discord clients from scratch, which most developers do not have the time for, there's not much that can be done for mobile support. Take this up with Discord, and hopefully there will be enough voices to make a difference. I will also help and support anyone who is attempting to launch a FOSS alternative to Discord.
+Short of making Android and iOS discord clients from scratch, which takes a large amount of effort, there's not much that can be done for mobile support. Hopefully there will be enough voices to make a difference if enough people care to reach out to them. I will also help and support anyone who is attempting to launch a FOSS alternative to Discord.
