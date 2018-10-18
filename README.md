@@ -10,7 +10,7 @@ This project was originally inspired by [Hmeritt's discord-encryption](https://g
 
 **DO NOT actually use the above linked project. I have found the source code to violate security conventions and intentionally obfuscate or confuse implemented functionality, pointing to ill intention or (hopefully) just negligence on the author's part.**
 
-**Although this current project also has some unpleasant characteristics (single file, JQuery hacks for UI), it follows good practices to the best of its ability, and I encourage users to review the source code before using it.**
+**Although this current project also has some issues with ease of readability, it follows good practices, and I encourage users to review the source code before using it.**
 
 ## Installation
 * You will need [Bandaged BetterDiscord](https://rauenzi.github.io/BetterDiscordApp/), which will exist alongside your existing Discord installation. Install this first if you don't have it.

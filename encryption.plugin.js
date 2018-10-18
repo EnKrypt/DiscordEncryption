@@ -130,7 +130,7 @@ class DiscordEncryption {
                 outline: none;
                 width: calc(100% - 0.25em);
                 color: #f0f0f0;
-                padding: 0.3em 0.5em;
+                padding: 0.3em 2.25em 0.3em 0.5em;
                 box-sizing: border-box;
                 font-size: 1em;
                 line-height: 1.5;
