@@ -474,10 +474,13 @@ class DiscordEncryption {
                     )}</span> &nbsp; &nbsp; <span class="show-secret-button">Show</span><br /><br /><br />
                         Raw Message:<br /><br />
                         <code>${text}</code>
-                    </div>${this.decrypt(
-                        this.pwtokey(secret),
-                        text.replace(this.encryptionHeader, '').trim()
+                    </div>${this.format(
+                        this.decrypt(
+                            this.pwtokey(secret),
+                            text.replace(this.encryptionHeader, '').trim()
+                        )
                     )}`;
+                    return result;
                 } catch (error) {} // No need to do anything. We know the key did not work.
             }
             return result;
@@ -549,6 +552,15 @@ class DiscordEncryption {
         cursor.stateNode.setState({
             textValue: ''
         });
+    }
+
+    format(text) {
+        return text
+            .replace(/\*\*(.+?)\*\*/gm, '<strong>$1</strong>')
+            .replace(/\_\_(.+?)\_\_/gm, '<u>$1</u>')
+            .replace(/\~\~(.+?)\~\~/gm, '<s>$1</s>')
+            .replace(/\*(.+?)\*/gm, '<em>$1</em>')
+            .replace(/\_(.+?)\_/gm, '<em>$1</em>');
     }
 
     /*
