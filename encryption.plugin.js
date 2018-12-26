@@ -32,7 +32,7 @@ class DiscordEncryption {
 
         this.configKey = `${this.getName()}Config`;
         this.messageSelector =
-            '.da-message .da-content .da-container .da-markup:not(.da-embedContentInner)';
+            '.da-message .da-content .da-markup:not(.da-embedContentInner)';
         this.textareaSelector = '.da-chat .da-content form textarea';
         this.encryptionHeader = '-----ENCRYPTED MESSAGE-----';
     }
@@ -294,7 +294,18 @@ class DiscordEncryption {
             for (var node of changes.addedNodes[0].querySelectorAll(
                 this.messageSelector
             )) {
-                node.innerHTML = this.decryptMessage(node.innerHTML);
+                if (node.classList.contains('da-isCompact')) {
+                    node.replaceChild(
+                        $(
+                            `<span>${this.decryptMessage(
+                                node.lastChild.nodeValue
+                            )}</span>`
+                        )[0],
+                        node.lastChild
+                    );
+                } else {
+                    node.innerHTML = this.decryptMessage(node.innerHTML);
+                }
             }
             // Scroll to bottom if own message
             if (this.messageSent) {
