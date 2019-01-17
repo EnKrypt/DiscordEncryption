@@ -209,7 +209,10 @@ class DiscordEncryption {
         );
 
         // Add overlay element
-        $('.app').after(`<div class="overlay-wrapper hide"></div>`);
+        // '.app' was removed in an update. Replaced with '.da-layers' for now but I'm not sure how consistent that
+        // will be in representing a single element which is a container box for the app except the title bar (so that
+        // the user can still minimize or exit even with our overlay visible). Hopefully this survives future updates.
+        $('.da-layers').after(`<div class="overlay-wrapper hide"></div>`);
         $('.overlay-wrapper')[0].addEventListener('click', e => {
             this.hideKeyFields();
         });
