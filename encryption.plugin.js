@@ -32,7 +32,7 @@ class DiscordEncryption {
 
         this.configKey = `${this.getName()}Config`;
         this.messageSelector =
-            '.da-message .da-content .da-markup:not(.da-embedContentInner)';
+            '.da-content .da-markup:not(.da-embedContentInner)';
         this.textareaSelector = '.da-chat .da-content form textarea';
         this.encryptionHeader = '-----ENCRYPTED MESSAGE-----';
     }
